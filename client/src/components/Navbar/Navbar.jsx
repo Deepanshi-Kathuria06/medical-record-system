@@ -16,7 +16,7 @@ const Navbar = ({ connectWallet }) => {
     <nav className="fixed top-0 left-0 w-full z-50 shadow-md bg-white dark:bg-gray-900 dark:text-white transition-colors">
       <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
         {/* Logo */}
-        <div className="text-xl font-bold cursor-pointer">
+        <div className="text-xl">
           MedChain
         </div>
 
