@@ -4,10 +4,12 @@ import Features from "../components/Features/Features";
 import HowItWorks from "../components/HowItWorks/How";
 import ContactUs from "../components/ContactUs/ContactUs";
 import Footer from "../components/Footer/Footer";
+import Navbar from "../components/Navbar/Navbar";
 
 export default function Landing() {
   return (
     <div>
+      <Navbar/>
       {/* Hero Section */}
       <section className="min-h-screen bg-gradient-to-r from-indigo-600 to-blue-600 text-white flex flex-col justify-center items-center text-center px-4">
         <h1 className="text-5xl font-bold mb-4">MedChain</h1>
