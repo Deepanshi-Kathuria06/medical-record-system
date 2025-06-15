@@ -87,7 +87,7 @@ export default function ContactUs() {
                   type="submit" 
                   className="w-full px-4 py-2.5 rounded-lg font-medium bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white transition-all duration-300 text-sm"
                 >
-                  Send Message
+                  Send Us a Message
                 </button>
               </form>
             </div>
