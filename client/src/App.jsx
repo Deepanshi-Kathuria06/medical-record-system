@@ -4,6 +4,7 @@ import Landing from "./pages/Landingpage";
 import PAuth from "./pages/PAuth"; // Make sure to import your PAuth component
 import ConnectWallet from './pages/connectwallet';
 import PDashboardpage from "./pages/PDashboardpage";
+import DDashboard from "./pages/DDashboard";
 
 
 function App() {
@@ -14,8 +15,8 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/pauth" element={<PAuth />} />
            <Route path="/connectwallet" element={<ConnectWallet />} />
-           <Route path="/PDashboardpage" element={<PDashboardpage />} />
-           
+           <Route path="/DDashboard" element={<DDashboard/>} />
+    
         </Routes>
       </div>
     </Router>
