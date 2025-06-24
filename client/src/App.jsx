@@ -16,6 +16,7 @@ function App() {
           <Route path="/pauth" element={<PAuth />} />
            <Route path="/connectwallet" element={<ConnectWallet />} />
            <Route path="/DDashboard" element={<DDashboard/>} />
+           <Route path="/PDashboardpage" element={<PDashboardpage/>} />
     
         </Routes>
       </div>
