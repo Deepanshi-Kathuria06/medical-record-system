@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stars, Text } from '@react-three/drei';
 import * as THREE from 'three';
+import axios from 'axios';
 
 const PAuth = () => {
   const navigate = useNavigate();
@@ -12,17 +13,38 @@ const PAuth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hoverState, setHoverState] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate authentication process
-    setTimeout(() => {
-      setIsSubmitting(false);
-      navigate('/connectwallet');
-    }, 1500);
-  };
+const [showSuccess, setShowSuccess] = useState(false);
 
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+
+  try {
+    // Call backend to store user
+    const res = await axios.post('http://localhost:5000/api/register', {
+      email,
+      password,
+      role: activeTab,
+    });
+
+    if (res.status === 201) {
+      setShowSuccess(true);
+      setTimeout(() => {
+        navigate('/connectwallet');
+      }, 1500);
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert('Registration failed. Please try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+    
+   
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gray-900 text-white">
       {/* 3D Background with DNA Helix */}
@@ -182,6 +204,12 @@ const PAuth = () => {
                 )}
               </button>
             </form>
+            {showSuccess && (
+  <div className="mt-4 text-green-400 text-center font-medium animate-pulse">
+    ✅ Registered successfully! Redirecting to MetaMask...
+  </div>
+)}
+
           </div>
 
           <div className="px-8 py-4 bg-white/5 border-t border-white/10 text-center">
