@@ -44,8 +44,8 @@ const handleSubmit = async (e) => {
     if (res.status === 201) {
       setShowSuccess(true);
 
-      localStorage.setItem("email", email);
-
+localStorage.setItem('userEmail', email);
+localStorage.setItem('userRole', activeTab);
       // Navigate to wallet connection page
       setTimeout(() => {
         navigate('/connectwallet'); // On this page, you handle MetaMask
@@ -233,7 +233,9 @@ const handleSubmit = async (e) => {
             {showSuccess && (
   <div className="mt-4 text-green-400 text-center font-medium animate-pulse">
     ✅ Registered successfully! Redirecting to MetaMask...
+    
   </div>
+  // After successful login
 )}
 
 

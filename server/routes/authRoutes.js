@@ -2,6 +2,32 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User'); // assuming path is correct
 
+// NEW ROUTE ADDED (without modifying existing code)
+router.get('/auth/me', async (req, res) => {
+  try {
+    // This assumes you're using some authentication middleware that sets req.user
+    // If not, you'll need to implement authentication logic here
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json({ 
+      username: user.username,
+      email: user.email,
+      walletAddress: user.walletAddress 
+    });
+  } catch (err) {
+    console.error('Error fetching user:', err);
+    res.status(500).json({ message: 'Server error fetching user data' });
+  }
+});
+
+// EXISTING CODE BELOW (unchanged)
 router.post('/register', async (req, res) => {
   const { username, email, password, role } = req.body;
 
@@ -29,27 +55,36 @@ router.post('/register', async (req, res) => {
   }
 });
 
-
-// PATCH /api/user/wallet
-// PATCH /api/user/wallet
 router.patch('/user/wallet', async (req, res) => {
-  const { username, walletAddress } = req.body;
+  const { username, email, walletAddress } = req.body;
 
-  if (!username || !walletAddress) {
-    return res.status(400).json({ message: 'Username and wallet address are required.' });
+  if ((!username && !email) || !walletAddress) {
+    return res.status(400).json({ message: 'Username or email AND wallet address are required.' });
   }
 
   try {
-    const user = await User.findOneAndUpdate({ username }, { walletAddress });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    const query = username ? { username } : { email };
 
-    res.json({ message: 'Wallet connected successfully' });
+    const user = await User.findOneAndUpdate(
+      query,
+      { $set: { walletAddress } },
+      { new: true, runValidators: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'Wallet connected successfully', user });
   } catch (err) {
-    console.error(err);
+    console.error('Wallet update error:', err);
+
+    if (err.code === 11000) {
+      return res.status(409).json({ message: 'This wallet is already linked to another account.' });
+    }
+
     res.status(500).json({ message: 'Server error while updating wallet' });
   }
 });
-
-
 
 module.exports = router;

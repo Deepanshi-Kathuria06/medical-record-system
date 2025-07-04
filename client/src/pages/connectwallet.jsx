@@ -1,14 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-const ConnectWallet = ({ username }) => {
+const ConnectWallet = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [account, setAccount] = useState('');
   const [network, setNetwork] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [showRobot, setShowRobot] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [userRole, setUserRole] = useState('');
   const navigate = useNavigate();
+
+  // Function to update wallet in backend
+  const updateWalletInBackend = async (walletAddress) => {
+    try {
+      if (!userEmail) {
+        throw new Error('User email not found');
+      }
+
+      const response = await fetch('http://localhost:5000/api/user/wallet', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          email: userEmail,
+          walletAddress
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      
+      if (responseData.user?.role) {
+        localStorage.setItem('userRole', responseData.user.role);
+        setUserRole(responseData.user.role);
+      }
+
+      return responseData;
+    } catch (error) {
+      console.error('Wallet update error:', error);
+      throw new Error(`Failed to update wallet: ${error.message}`);
+    }
+  };
+
+  // Get user data from localStorage when component mounts
+  useEffect(() => {
+    const email = localStorage.getItem('userEmail');
+    const role = localStorage.getItem('userRole');
+    
+    if (!email) {
+      alert('Please login first');
+      navigate('/PAuth');
+      return;
+    }
+    
+    setUserEmail(email);
+    if (role) setUserRole(role);
+  }, [navigate]);
 
   const getNetwork = async () => {
     if (!window.ethereum) return;
@@ -23,68 +76,72 @@ const ConnectWallet = ({ username }) => {
     }
   };
 
-  const updateWalletInBackend = async (walletAddress) => {
-    try {
-      const response = await fetch('/api/user/wallet', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: username,
-          walletAddress: walletAddress
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update wallet in database');
-      }
-
-      const data = await response.json();
-      console.log('Wallet updated in backend:', data);
-    } catch (error) {
-      console.error('Error updating wallet:', error);
-      // You might want to handle this error differently
-    }
-  };
-
   const connectWallet = async () => {
     try {
       setIsConnecting(true);
-      if (!window.ethereum) throw new Error('Please install MetaMask!');
       
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (!window.ethereum) throw new Error('Please install MetaMask!');
+      if (!userEmail) throw new Error('User session expired');
+
+      const accounts = await window.ethereum.request({ 
+        method: 'eth_requestAccounts' 
+      });
+      const walletAddress = accounts[0];
+      
+      await updateWalletInBackend(walletAddress);
+
       setIsConnected(true);
-      setAccount(accounts[0]);
+      setAccount(walletAddress);
       await getNetwork();
       
-      // Update wallet in backend
-      await updateWalletInBackend(accounts[0]);
-      
-      // Show robot animation
       setShowRobot(true);
       
-      // Redirect after animation completes
+      // Redirect based on user role after animation
       setTimeout(() => {
-        navigate('/PDashboardpage');
+        if (userRole === 'doctor') {
+          navigate('/DDashboard');
+        } else {
+          navigate('/PDashboardpage');
+        }
       }, 2500);
-      
-      // Set up account change listener
-      window.ethereum.on('accountsChanged', (accounts) => {
+
+      // Event listeners for account/chain changes
+      const handleAccountsChanged = (accounts) => {
         if (!accounts.length) {
           setIsConnected(false);
           setAccount('');
           setNetwork('');
         }
-      });
+      };
       
-      // Set up chain change listener
-      window.ethereum.on('chainChanged', () => {
+      const handleChainChanged = () => {
         window.location.reload();
-      });
+      };
+
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+      window.ethereum.on('chainChanged', handleChainChanged);
+
+      // Cleanup function
+      return () => {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
+      };
       
     } catch (err) {
-      alert(err.message);
+      console.error('Connection error:', err);
+      
+      let errorMessage = err.message;
+      if (err.message.includes('User denied')) {
+        errorMessage = 'You need to approve the connection in MetaMask';
+      } else if (err.message.includes('already linked')) {
+        errorMessage = 'This wallet is already connected to another account';
+      }
+      
+      alert(`Wallet connection failed: ${errorMessage}`);
+      
+      setIsConnected(false);
+      setAccount('');
+      setNetwork('');
     } finally {
       setIsConnecting(false);
     }
