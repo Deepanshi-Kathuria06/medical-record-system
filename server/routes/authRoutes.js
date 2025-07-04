@@ -86,5 +86,15 @@ router.patch('/user/wallet', async (req, res) => {
     res.status(500).json({ message: 'Server error while updating wallet' });
   }
 });
+// Add to your authRoutes.js
+router.get('/user/:email', async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.params.email }).select('-password');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;

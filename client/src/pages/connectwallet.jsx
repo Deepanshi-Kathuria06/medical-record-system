@@ -97,13 +97,12 @@ const ConnectWallet = () => {
       setShowRobot(true);
       
       // Redirect based on user role after animation
-      setTimeout(() => {
-        if (userRole === 'doctor') {
-          navigate('/DDashboard');
-        } else {
-          navigate('/PDashboardpage');
-        }
-      }, 2500);
+     // In the connectWallet function after successful connection:
+setTimeout(() => {
+  navigate(userRole === 'doctor' ? '/DDashboard' : '/PDashboardpage', {
+    state: { userEmail } // Only pass email
+  });
+}, 2500);
 
       // Event listeners for account/chain changes
       const handleAccountsChanged = (accounts) => {
