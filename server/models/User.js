@@ -23,9 +23,9 @@ const userSchema = new mongoose.Schema({
   walletAddress: {          
     type: String,
     required: false,
-    unique: true,
+    unique: false,
     sparse: true,           
   },
-}, { timestamps: true });
+}, { timestamps: true }); 
 
 module.exports = mongoose.model('User', userSchema);
