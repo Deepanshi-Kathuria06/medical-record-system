@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
-const ConnectWallet = () => {
+const ConnectWallet = ({ username }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [account, setAccount] = useState('');
   const [network, setNetwork] = useState('');
@@ -23,6 +23,31 @@ const ConnectWallet = () => {
     }
   };
 
+  const updateWalletInBackend = async (walletAddress) => {
+    try {
+      const response = await fetch('/api/user/wallet', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          walletAddress: walletAddress
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update wallet in database');
+      }
+
+      const data = await response.json();
+      console.log('Wallet updated in backend:', data);
+    } catch (error) {
+      console.error('Error updating wallet:', error);
+      // You might want to handle this error differently
+    }
+  };
+
   const connectWallet = async () => {
     try {
       setIsConnecting(true);
@@ -33,12 +58,15 @@ const ConnectWallet = () => {
       setAccount(accounts[0]);
       await getNetwork();
       
+      // Update wallet in backend
+      await updateWalletInBackend(accounts[0]);
+      
       // Show robot animation
       setShowRobot(true);
       
       // Redirect after animation completes
       setTimeout(() => {
-        navigate('/PDashboardpage'); // Make sure this matches your route
+        navigate('/PDashboardpage');
       }, 2500);
       
       // Set up account change listener
