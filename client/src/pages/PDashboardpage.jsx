@@ -29,7 +29,13 @@ const PDashboardpage = () => {
   const [patientAccount, setPatientAccount] = useState({
     name: '',
     email: '',
-    walletAddress: ''
+    walletAddress: '',
+    dob: '',
+    bloodType: '',
+    allergies: '',
+    medications: '',
+    phone: '',
+    emergencyContact: ''
   });
 
   // Default contacts
@@ -47,39 +53,49 @@ const PDashboardpage = () => {
     { name: 'prescription-0423.pdf', cid: 'QmDeF9012UtNxGuqRGGgw3s2mf', shared: true }
   ];
 
+  // Function to extract username from email
+  const getUsernameFromEmail = (email) => {
+    if (!email) return '';
+    const atIndex = email.indexOf('@');
+    if (atIndex === -1) return email;
+    const username = email.substring(0, atIndex);
+    return username.charAt(0).toUpperCase() + username.slice(1);
+  };
+
   // Fetch user data on component mount
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // In a real app, you would get this from your auth context or token
-        const userEmail = 'patient@example.com'; // Replace with dynamic email from auth
+        // In a real app, you would get this from localStorage or auth context
+        const userEmail = localStorage.getItem('userEmail') || 'patient@example.com';
+        const walletAddress = localStorage.getItem('walletAddress') || '0x7f3a...4b5c';
+        
+        // Generate username from email
+        const username = getUsernameFromEmail(userEmail);
         
         // Simulate API call
         setTimeout(() => {
-          // Mock response - replace with actual API call in production
+          // Mock response with additional patient details
           const mockUserData = {
-            name: 'John Smith',
-            email: 'patient@example.com',
-            walletAddress: '0x7f3a...4b5c'
+            name: username || 'John Smith', // Use generated username or fallback
+            email: userEmail,
+            walletAddress: walletAddress,
+            dob: '1985-07-15',
+            bloodType: 'A+',
+            allergies: 'Penicillin, Peanuts',
+            medications: 'Lisinopril 10mg daily',
+            phone: '+1 (555) 123-4567',
+            emergencyContact: 'Jane Doe (Spouse) +1 (555) 987-6543'
           };
           
           setUserData(mockUserData);
-          setPatientAccount({
-            name: mockUserData.name,
-            email: mockUserData.email,
-            walletAddress: mockUserData.walletAddress
-          });
+          setPatientAccount(mockUserData);
           
           // Set sample files for demo purposes
           setFiles(sampleFiles);
           
           setIsLoading(false);
         }, 1000);
-        
-        // Actual API call would look like:
-        // const response = await axios.get(`/api/user/${userEmail}`);
-        // setUserData(response.data);
-        // ... rest of the logic
         
       } catch (error) {
         console.error('Failed to fetch user data:', error);
@@ -186,16 +202,39 @@ const PDashboardpage = () => {
 
   const handleAccountChange = (e) => {
     const { name, value } = e.target;
-    setPatientAccount(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // If email is being changed, update the username as well
+    if (name === 'email') {
+      const username = getUsernameFromEmail(value);
+      setPatientAccount(prev => ({
+        ...prev,
+        [name]: value,
+        name: username || prev.name // Update name only if we can extract from email
+      }));
+    } else {
+      setPatientAccount(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const saveAccountChanges = () => {
     setIsEditing(false);
+    // Update user data with new account information
+    setUserData(patientAccount);
     // In a real app, you would save to backend here
     alert('Account information updated successfully!');
+  };
+
+  const handleLogout = () => {
+    // Clear user session
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('walletAddress');
+    
+    // Redirect to login page (in a real app)
+    alert('You have been logged out');
   };
 
   if (isLoading) {
@@ -578,27 +617,100 @@ const PDashboardpage = () => {
                         value={patientAccount.email}
                         onChange={handleAccountChange}
                         className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                        disabled // Email shouldn't be editable
                       />
                     ) : (
                       <p className="p-2 bg-gray-700 rounded-lg text-white">{patientAccount.email}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Date of Birth</label>
+                    {isEditing ? (
+                      <input
+                        type="date"
+                        name="dob"
+                        value={patientAccount.dob}
+                        onChange={handleAccountChange}
+                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                      />
+                    ) : (
+                      <p className="p-2 bg-gray-700 rounded-lg text-white">{patientAccount.dob}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Blood Type</label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="bloodType"
+                        value={patientAccount.bloodType}
+                        onChange={handleAccountChange}
+                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                      />
+                    ) : (
+                      <p className="p-2 bg-gray-700 rounded-lg text-white">{patientAccount.bloodType}</p>
                     )}
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Wallet Address</label>
-                    <div className="flex items-center gap-2 p-2 bg-gray-700 rounded-lg">
-                      <p className="text-white">{patientAccount.walletAddress}</p>
-                      <button 
-                        onClick={() => copyToClipboard(patientAccount.walletAddress, 'wallet')}
-                        className="text-gray-400 hover:text-cyan-400 transition-colors"
-                        title="Copy address"
-                      >
-                        <Copy size={16} />
-                      </button>
-                    </div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Allergies</label>
+                    {isEditing ? (
+                      <textarea
+                        name="allergies"
+                        value={patientAccount.allergies}
+                        onChange={handleAccountChange}
+                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white h-20"
+                      />
+                    ) : (
+                      <p className="p-2 bg-gray-700 rounded-lg text-white">{patientAccount.allergies}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Current Medications</label>
+                    {isEditing ? (
+                      <textarea
+                        name="medications"
+                        value={patientAccount.medications}
+                        onChange={handleAccountChange}
+                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white h-20"
+                      />
+                    ) : (
+                      <p className="p-2 bg-gray-700 rounded-lg text-white">{patientAccount.medications}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Phone</label>
+                    {isEditing ? (
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={patientAccount.phone}
+                        onChange={handleAccountChange}
+                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                      />
+                    ) : (
+                      <p className="p-2 bg-gray-700 rounded-lg text-white">{patientAccount.phone}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Emergency Contact</label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="emergencyContact"
+                        value={patientAccount.emergencyContact}
+                        onChange={handleAccountChange}
+                        className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                      />
+                    ) : (
+                      <p className="p-2 bg-gray-700 rounded-lg text-white">{patientAccount.emergencyContact}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -610,7 +722,10 @@ const PDashboardpage = () => {
                     <Lock size={18} className="text-purple-400" />
                     <span>Change Password</span>
                   </button>
-                  <button className="flex items-center gap-2 p-4 bg-gray-700 hover:bg-gray-600 rounded-lg border border-gray-600 transition-colors">
+                  <button 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 p-4 bg-gray-700 hover:bg-gray-600 rounded-lg border border-gray-600 transition-colors"
+                  >
                     <LogOut size={18} className="text-red-400" />
                     <span>Sign Out</span>
                   </button>
@@ -702,7 +817,7 @@ const PDashboardpage = () => {
                 </div>
                 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Description (optional)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Purpose (optional)</label>
                   <textarea
                     value={shareDescription}
                     onChange={(e) => setShareDescription(e.target.value)}

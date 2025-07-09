@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ClipboardList, User, Stethoscope, FileText, Calendar, 
   Search, Bell, Menu, X, ChevronDown, ChevronRight, 
@@ -9,8 +9,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import { useNavigate } from 'react-router-dom';
-
-// Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -28,19 +26,20 @@ const DDashboard = () => {
   const [showAccountPanel, setShowAccountPanel] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   // Doctor account data with editable state
   const [doctorAccount, setDoctorAccount] = useState({
-    name: 'Dr. Deepanshi',
-    email: 'deepanshi@medchain.com',
-    hospital: 'Metro Health Hospital',
-    role: 'Senior Cardiologist',
-    walletAddress: '0x7f...3a4b',
-    phone: '+1 (555) 123-4567',
-    licenseNumber: 'MD12345678',
-    specialization: 'Cardiology',
-    yearsOfExperience: '8'
+    name: '',
+    email: '',
+    hospital: '',
+    role: '',
+    walletAddress: '',
+    phone: '',
+    licenseNumber: '',
+    specialization: '',
+    yearsOfExperience: ''
   });
 
   const [tempAccount, setTempAccount] = useState({...doctorAccount});
@@ -107,6 +106,51 @@ const DDashboard = () => {
     exit: { opacity: 0 }
   };
 
+  // Fetch doctor data on component mount
+  useEffect(() => {
+    const fetchDoctorData = async () => {
+      try {
+        const userEmail = localStorage.getItem('userEmail');
+        const walletAddress = localStorage.getItem('walletAddress');
+        
+        if (!userEmail) {
+          navigate('/login');
+          return;
+        }
+
+        // In a real app, you would fetch from your backend
+        // This is a mock implementation
+        const mockDoctorData = {
+          name: 'Dr. ' + (userEmail.split('@')[0] || 'User'),
+          email: userEmail,
+          hospital: 'Metro Health Hospital',
+          role: 'Senior Cardiologist',
+          phone: '+1 (555) 123-4567',
+          licenseNumber: 'MD' + Math.floor(10000000 + Math.random() * 90000000),
+          specialization: 'Cardiology',
+          yearsOfExperience: '8'
+        };
+
+        setDoctorAccount({
+          ...mockDoctorData,
+          walletAddress: walletAddress || 'Not connected'
+        });
+        setTempAccount({
+          ...mockDoctorData,
+          walletAddress: walletAddress || 'Not connected'
+        });
+        
+      } catch (error) {
+        console.error('Error fetching doctor data:', error);
+        alert('Failed to load doctor data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDoctorData();
+  }, [navigate]);
+
   // Helper functions
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   
@@ -155,11 +199,15 @@ const DDashboard = () => {
     }));
   };
 
-  const saveChanges = () => {
-    setDoctorAccount({...tempAccount});
-    setIsEditing(false);
-    // In a real app, you would call an API to update the user data here
-    alert('Profile updated successfully!');
+  const saveChanges = async () => {
+    try {
+      // In a real app, you would call an API to update the user data here
+      setDoctorAccount({...tempAccount});
+      setIsEditing(false);
+      alert('Profile updated successfully!');
+    } catch (error) {
+      alert('Failed to update profile');
+    }
   };
 
   const cancelEditing = () => {
@@ -186,10 +234,19 @@ const DDashboard = () => {
     localStorage.removeItem('userToken');
     localStorage.removeItem('userEmail');
     localStorage.removeItem('userRole');
+    localStorage.removeItem('walletAddress');
     
     // Redirect to login page
     navigate('/login');
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading doctor data...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 flex overflow-hidden">
@@ -247,10 +304,12 @@ const DDashboard = () => {
 
           <div className="mt-auto pt-4 border-t border-gray-700">
             <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-700">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 flex items-center justify-center text-white font-medium">DR</div>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 flex items-center justify-center text-white font-medium">
+                {doctorAccount.name.charAt(0)}
+              </div>
               <div>
-                <p className="font-medium">Dr. Deepanshi</p>
-                <p className="text-xs text-gray-400">Cardiologist</p>
+                <p className="font-medium">{doctorAccount.name}</p>
+                <p className="text-xs text-gray-400">{doctorAccount.role}</p>
               </div>
             </div>
           </div>
@@ -295,7 +354,9 @@ const DDashboard = () => {
                   onClick={() => setShowAccountPanel(true)}
                   className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 flex items-center justify-center text-white font-medium">DR</div>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 flex items-center justify-center text-white font-medium">
+                    {doctorAccount.name.charAt(0)}
+                  </div>
                   <ChevronDown size={16} className="text-gray-400" />
                 </button>
               </div>
@@ -545,6 +606,9 @@ const DDashboard = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-white">{doctorAccount.name}</h3>
                 <p className="text-gray-400">{doctorAccount.role}</p>
+                <p className="text-sm text-cyan-400 mt-1">
+                  {doctorAccount.walletAddress}
+                </p>
               </div>
 
               {isEditing ? (
@@ -567,6 +631,7 @@ const DDashboard = () => {
                       value={tempAccount.email}
                       onChange={handleInputChange}
                       className="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                      disabled
                     />
                   </div>
                   <div>
